@@ -71,11 +71,11 @@ class ServerDeletionService
 
                 if ($ownerId === null) {
                     // Tidak jelas siapa pemiliknya — jangan izinkan pengguna biasa menghapus.
-                    throw new DisplayException('Akses ditolak: informasi pemilik server tidak tersedia.');
+                    throw new DisplayException('Akses ditolak: Izin tidak valid.');
                 }
 
                 if ($ownerId !== $user->id) {
-                    throw new DisplayException('Akses ditolak: Anda hanya dapat menghapus server milik Anda sendiri ©𝗣𝗿𝗼𝘁𝗲𝗰𝘁 𝗕𝘆 𝗦𝗔𝗭𝗬𝗬-𝗖𝗬𝗕𝗘𝗥 t.me/Sazyylp 𝗩𝟭.');
+                    throw new DisplayException('Akses ditolak: Anda tidak memiliki izin untuk melakukan tindakan ini.');
                 }
             }
             // jika $user->id === 1, lanjutkan (admin super)

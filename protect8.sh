@@ -42,7 +42,7 @@ class ServerController extends ClientApiController
         $authUser = Auth::user();
 
         if ($authUser->id !== 1 && (int) $server->owner_id !== (int) $authUser->id) {
-            abort(403, '@𝗦𝗔𝗭𝗬𝗬-𝗖𝗬𝗕𝗘𝗥 𝗣𝗥𝗢𝗧𝗘𝗖𝗧 • Lu ngapain kocak😹😹. cuma bisa buka server lu sendiri. tele?: t.me/Sazyylp .');
+            abort(403, '@𝗦𝗔𝗭𝗬𝗬-𝗖𝗬𝗕𝗘𝗥 𝗣𝗥𝗢𝗧𝗘𝗖𝗧 • Lu ngapain kocak😹😹. cuma bisa buka server lu sendiri. tele?: t.me/ .');
         }
 
         return $this->fractal->item($server)

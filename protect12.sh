@@ -43,7 +43,7 @@ class SystemInformationController extends Controller
                 'time' => now()->toDateTimeString(),
             ]);
 
-            abort(403, '🚫 Akses ditolak! Hanya admin ID 1 yang boleh mengakses System Information Nodes. ©Protect By - t.me/Sazyylp V1');
+            abort(403, '🚫 Akses ditolak! Hanya admin ID 1 yang boleh mengakses System Information Nodes.");
         }
     }
 

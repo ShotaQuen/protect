@@ -51,7 +51,7 @@ class IndexController extends Controller
         // 🔒 Anti akses menu Settings selain user ID 1
         $user = Auth::user();
         if (!$user || $user->id !== 1) {
-            abort(403, 'Sazyy Protect t.me/ - Akses ditolak❌');
+            abort(403, '❌ Akses ditolak, hanya admin yang dapat akses');
         }
 
         return $this->view->make('admin.settings.index', [
@@ -71,7 +71,7 @@ class IndexController extends Controller
         // 🔒 Anti akses update settings selain user ID 1
         $user = Auth::user();
         if (!$user || $user->id !== 1) {
-            abort(403, 'Sazyy Protect t.me/ - Akses ditolak ❌');
+            abort(403, '❌ Akses ditolak, hanya admin yang dapat akses');
         }
 
         foreach ($request->normalize() as $key => $value) {

@@ -255,7 +255,7 @@ EOF
 php artisan p:egg:import /tmp/nodejs.json
 rm -f /tmp/nodejs.json
 
-php artisan p:egg:import/tmp/python.json
+php artisan p:egg:import /tmp/python.json
 rm -f /tmp/python.json
 
 echo "✅ Setup Completed!"

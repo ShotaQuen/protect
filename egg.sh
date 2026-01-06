@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-echo "🥚 Starting Auto Egg & Nest Setup"
+echo "🥚 Starting Auto Egg Setup"
 PTERO_PATH="/var/www/pterodactyl"
 
 if [ ! -d "$PTERO_PATH" ]; then
@@ -10,19 +10,6 @@ if [ ! -d "$PTERO_PATH" ]; then
 fi
 
 cd $PTERO_PATH || exit 1
-echo "📁 Creating Nest..."
-NEST_NAME="Pemrograman"
-NEST_DESC="Nest untuk pemrograman egg"
-
-NEST_ID=$(php artisan p:nest:list | grep -i "$NEST_NAME" | awk '{print $1}' || true)
-if [ -z "$NEST_ID" ]; then
-    php artisan p:nest:create --name="$NEST_NAME" --description="$NEST_DESC"
-    NEST_ID=$(php artisan p:nest:list | grep -i "$NEST_NAME" | awk '{print $1}')
-    echo "✅ Nest created with ID: $NEST_ID"
-else
-    echo "⚠️ Nest already exists with ID: $NEST_ID"
-fi
-
 echo "📦 Creating Egg JSON files..."
 cat > /tmp/nodejs.json << 'EOF'
 {
@@ -265,11 +252,12 @@ cat > /tmp/python.json << 'EOF'
 EOF
 
 echo "🚀 Importing NodeJS Egg..."
-php artisan p:egg:import /tmp/nodejs.json --nest="$NEST_ID"
+php artisan p:egg:import /tmp/nodejs.json
 
 echo "🚀 Importing Python Egg..."
-php artisan p:egg:import /tmp/python.json --nest="$NEST_ID"
+php artisan p:egg:import /tmp/python.json
 
 rm -f /tmp/nodejs.json /tmp/python.json
 
-echo "✅ Setup Completed Successfully!"
+echo "✅ Egg Import Completed!"
+echo "⚠️  Jangan lupa: buat NEST manual di panel lalu pindahkan egg ke nest tersebut."

@@ -1,17 +1,29 @@
 #!/bin/bash
-echo "🥚 Starting Auto Egg & Nest Setup"
 
-if [ ! -d "/var/www/pterodactyl" ]; then
-    echo "❌ Pterodactyl panel not found!"
+set -e
+echo "🥚 Starting Auto Egg & Nest Setup"
+PTERO_PATH="/var/www/pterodactyl"
+
+if [ ! -d "$PTERO_PATH" ]; then
+    echo "❌ Pterodactyl panel not found at $PTERO_PATH"
     exit 1
 fi
 
-cd /var/www/pterodactyl
+cd $PTERO_PATH || exit 1
 echo "📁 Creating Nest..."
 NEST_NAME="Pemrograman"
-php artisan p:nest:create --name="$NEST_NAME" --description="Nest untuk pemrograman egg"
+NEST_DESC="Nest untuk pemrograman egg"
 
-echo "📦 Creating Egg..."
+NEST_ID=$(php artisan p:nest:list | grep -i "$NEST_NAME" | awk '{print $1}' || true)
+if [ -z "$NEST_ID" ]; then
+    php artisan p:nest:create --name="$NEST_NAME" --description="$NEST_DESC"
+    NEST_ID=$(php artisan p:nest:list | grep -i "$NEST_NAME" | awk '{print $1}')
+    echo "✅ Nest created with ID: $NEST_ID"
+else
+    echo "⚠️ Nest already exists with ID: $NEST_ID"
+fi
+
+echo "📦 Creating Egg JSON files..."
 cat > /tmp/nodejs.json << 'EOF'
 {
     "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
@@ -252,10 +264,12 @@ cat > /tmp/python.json << 'EOF'
 }
 EOF
 
-php artisan p:egg:import /tmp/nodejs.json
-rm -f /tmp/nodejs.json
+echo "🚀 Importing NodeJS Egg..."
+php artisan p:egg:import /tmp/nodejs.json --nest="$NEST_ID"
 
-php artisan p:egg:import /tmp/python.json
-rm -f /tmp/python.json
+echo "🚀 Importing Python Egg..."
+php artisan p:egg:import /tmp/python.json --nest="$NEST_ID"
 
-echo "✅ Setup Completed!"
+rm -f /tmp/nodejs.json /tmp/python.json
+
+echo "✅ Setup Completed Successfully!"

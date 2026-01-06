@@ -1,16 +1,57 @@
 #!/bin/bash
+echo "🥚 Starting Auto Egg & Nest Setup"
 
-set -e
-echo "🥚 Starting Auto Egg Setup"
-PTERO_PATH="/var/www/pterodactyl"
-
-if [ ! -d "$PTERO_PATH" ]; then
-    echo "❌ Pterodactyl panel not found at $PTERO_PATH"
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then 
+    echo "❌ Please run as root"
     exit 1
 fi
 
-cd $PTERO_PATH || exit 1
-echo "📦 Creating Egg JSON files..."
+if [ ! -d "/var/www/pterodactyl" ]; then
+    echo "❌ Pterodactyl panel not found!"
+    exit 1
+fi
+
+cd /var/www/pterodactyl || exit 1
+
+# Check Pterodactyl version
+echo "🔍 Checking Pterodactyl version..."
+PANEL_VERSION=$(php artisan p:info | grep -oP 'Version:\s*\K[\d\.]+' | head -1)
+echo "📊 Panel Version: $PANEL_VERSION"
+
+# Method 1: Direct database insertion for nest creation
+echo "📁 Creating Nest 'Pemrograman'..."
+NEST_NAME="Pemrograman"
+
+# Check if nest already exists
+NEST_EXISTS=$(mysql -e "SELECT id FROM panel.nests WHERE name = '$NEST_NAME';" 2>/dev/null | tail -1)
+
+if [ -z "$NEST_EXISTS" ]; then
+    echo "📝 Creating new nest in database..."
+    
+    # Get the next available ID
+    NEXT_ID=$(mysql -e "SELECT IFNULL(MAX(id), 0) + 1 FROM panel.nests;" 2>/dev/null | tail -1)
+    
+    # Insert nest into database
+    mysql -e "INSERT INTO panel.nests (id, uuid, name, description, author, created_at, updated_at) 
+              VALUES ($NEXT_ID, UUID(), '$NEST_NAME', 'Nest untuk pemrograman egg', 'System', NOW(), NOW());" 2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ Nest '$NEST_NAME' created successfully!"
+        NEST_ID=$NEXT_ID
+    else
+        echo "⚠️  Could not create nest via database. Will attempt to continue with default nest..."
+        # Try to get an existing nest ID
+        NEST_ID=$(mysql -e "SELECT id FROM panel.nests LIMIT 1;" 2>/dev/null | tail -1)
+    fi
+else
+    echo "✅ Nest '$NEST_NAME' already exists (ID: $NEST_EXISTS)"
+    NEST_ID=$NEST_EXISTS
+fi
+
+echo "📦 Creating Eggs..."
+
+# Create eggs in /tmp directory
 cat > /tmp/nodejs.json << 'EOF'
 {
     "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
@@ -19,55 +60,44 @@ cat > /tmp/nodejs.json << 'EOF'
         "update_url": null
     },
     "exported_at": "2025-11-13T13:35:54+07:00",
-    "name": "Nodejs",
-    "author": "Ikann",
-    "description": null,
+    "name": "NodeJS",
+    "author": "Ikanm",
+    "description": "Node.js Application Egg",
     "features": null,
     "docker_images": {
-        "ghcr.io\/parkervcp\/yolks:nodejs_24": "ghcr.io\/parkervcp\/yolks:nodejs_24",
-        "ghcr.io\/parkervcp\/yolks:nodejs_23": "ghcr.io\/parkervcp\/yolks:nodejs_23",
-        "ghcr.io\/parkervcp\/yolks:nodejs_22": "ghcr.io\/parkervcp\/yolks:nodejs_22",
-        "ghcr.io\/parkervcp\/yolks:nodejs_21": "ghcr.io\/parkervcp\/yolks:nodejs_21",
-        "ghcr.io\/parkervcp\/yolks:nodejs_20": "ghcr.io\/parkervcp\/yolks:nodejs_20",
-        "ghcr.io\/parkervcp\/yolks:nodejs_19": "ghcr.io\/parkervcp\/yolks:nodejs_19",
-        "ghcr.io\/parkervcp\/yolks:nodejs_18": "ghcr.io\/parkervcp\/yolks:nodejs_18",
-        "ghcr.io\/parkervcp\/yolks:nodejs_17": "ghcr.io\/parkervcp\/yolks:nodejs_17",
-        "ghcr.io\/parkervcp\/yolks:nodejs_16": "ghcr.io\/parkervcp\/yolks:nodejs_16",
-        "ghcr.io\/parkervcp\/yolks:nodejs_15": "ghcr.io\/parkervcp\/yolks:nodejs_15",
-        "ghcr.io\/parkervcp\/yolks:nodejs_14": "ghcr.io\/parkervcp\/yolks:nodejs_14",
-        "ghcr.io\/parkervcp\/yolks:nodejs_13": "ghcr.io\/parkervcp\/yolks:nodejs_13",
-        "ghcr.io\/parkervcp\/yolks:nodejs_12": "ghcr.io\/parkervcp\/yolks:nodejs_12",
-        "ghcr.io\/parkervcp\/yolks:nodejs_11": "ghcr.io\/parkervcp\/yolks:nodejs_11",
-        "ghcr.io\/parkervcp\/yolks:nodejs_10": "ghcr.io\/parkervcp\/yolks:nodejs_10",
-        "ghcr.io\/parkervcp\/yolks:nodejs_9": "ghcr.io\/parkervcp\/yolks:nodejs_9",
-        "ghcr.io\/parkervcp\/yolks:nodejs_8": "ghcr.io\/parkervcp\/yolks:nodejs_8",
-        "ghcr.io\/parkervcp\/yolks:nodejs_7": "ghcr.io\/parkervcp\/yolks:nodejs_7",
-        "ghcr.io\/parkervcp\/yolks:nodejs_6": "ghcr.io\/parkervcp\/yolks:nodejs_6",
-        "ghcr.io\/parkervcp\/yolks:nodejs_5": "ghcr.io\/parkervcp\/yolks:nodejs_5",
-        "ghcr.io\/parkervcp\/yolks:nodejs_4": "ghcr.io\/parkervcp\/yolks:nodejs_4",
-        "ghcr.io\/parkervcp\/yolks:nodejs_3": "ghcr.io\/parkervcp\/yolks:nodejs_3",
-        "ghcr.io\/parkervcp\/yolks:nodejs_2": "ghcr.io\/parkervcp\/yolks:nodejs_2",
-        "ghcr.io\/parkervcp\/yolks:nodejs_1": "ghcr.io\/parkervcp\/yolks:nodejs_1"
+        "ghcr.io/parkervcp/yolks:nodejs_24": "Node.js 24",
+        "ghcr.io/parkervcp/yolks:nodejs_23": "Node.js 23",
+        "ghcr.io/parkervcp/yolks:nodejs_22": "Node.js 22",
+        "ghcr.io/parkervcp/yolks:nodejs_21": "Node.js 21",
+        "ghcr.io/parkervcp/yolks:nodejs_20": "Node.js 20",
+        "ghcr.io/parkervcp/yolks:nodejs_19": "Node.js 19",
+        "ghcr.io/parkervcp/yolks:nodejs_18": "Node.js 18",
+        "ghcr.io/parkervcp/yolks:nodejs_17": "Node.js 17",
+        "ghcr.io/parkervcp/yolks:nodejs_16": "Node.js 16",
+        "ghcr.io/parkervcp/yolks:nodejs_15": "Node.js 15",
+        "ghcr.io/parkervcp/yolks:nodejs_14": "Node.js 14"
     },
     "file_denylist": [],
-    "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then \/usr\/local\/bin\/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then \/usr\/local\/bin\/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f \/home\/container\/package.json ]; then \/usr\/local\/bin\/npm install; fi;  if [[ ! -z ${CUSTOM_ENVIRONMENT_VARIABLES} ]]; then      vars=$(echo ${CUSTOM_ENVIRONMENT_VARIABLES} | tr \";\" \"\\n\");      for line in $vars;     do export $line;     done fi;  \/usr\/local\/bin\/${CMD_RUN};",
+    "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [[ ! -z \${NODE_PACKAGES} ]]; then /usr/local/bin/npm install \${NODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install; fi; /usr/local/bin/\${CMD_RUN};",
     "config": {
         "files": "{}",
-        "startup": "{\r\n    \"done\": \"running\"\r\n}",
+        "startup": {
+            "done": "running"
+        },
         "logs": "{}",
-        "stop": "^^C"
+        "stop": "^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n# NodeJS App Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt update\r\napt install -y git curl jq file unzip make gcc g++ python python-dev libtool\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ \"${USER_UPLOAD}\" == \"true\" ] || [ \"${USER_UPLOAD}\" == \"1\" ]; then\r\n    echo -e \"assuming user knows what they are doing have a good day.\"\r\n    exit 0\r\nfi\r\n\r\n## add git ending if it's not on the address\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nif [ -z \"${USERNAME}\" ] && [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo -e \"using anon api call\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@$(echo -e ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\n## pull git js repo\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    echo -e \"\/mnt\/server directory is not empty.\"\r\n    if [ -d .git ]; then\r\n        echo -e \".git directory exists\"\r\n        if [ -f .git\/config ]; then\r\n            echo -e \"loading info from git config\"\r\n            ORIGIN=$(git config --get remote.origin.url)\r\n        else\r\n            echo -e \"files found with no git config\"\r\n            echo -e \"closing out without touching things to not break anything\"\r\n            exit 10\r\n        fi\r\n    fi\r\n\r\n    if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n        echo \"pulling latest from github\"\r\n        git pull\r\n    fi\r\nelse\r\n    echo -e \"\/mnt\/server is empty.\\ncloning files into repo\"\r\n    if [ -z ${BRANCH} ]; then\r\n        echo -e \"cloning default branch\"\r\n        git clone ${GIT_ADDRESS} .\r\n    else\r\n        echo -e \"cloning ${BRANCH}'\"\r\n        git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\n    fi\r\n\r\nfi\r\n\r\necho \"Installing nodejs packages\"\r\nif [[ ! -z ${NODE_PACKAGES} ]]; then\r\n    \/usr\/local\/bin\/npm install ${NODE_PACKAGES}\r\nfi\r\n\r\nif [ -f \/mnt\/server\/package.json ]; then\r\n    \/usr\/local\/bin\/npm install --production\r\nfi\r\n\r\necho -e \"install complete\"\r\nexit 0",
-            "container": "node:14-buster-slim",
+            "script": "#!/bin/bash\n# NodeJS App Installation Script\n#\n# Server Files: /mnt/server\napt update\napt install -y git curl jq file unzip make gcc g++ python python-dev libtool\n\nmkdir -p /mnt/server\ncd /mnt/server\n\nif [ \"\${USER_UPLOAD}\" == \"true\" ] || [ \"\${USER_UPLOAD}\" == \"1\" ]; then\n    echo -e \"assuming user knows what they are doing have a good day.\"\n    exit 0\nfi\n\nif [[ \${GIT_ADDRESS} != *.git ]]; then\n    GIT_ADDRESS=\${GIT_ADDRESS}.git\nfi\n\nif [ -z \"\${USERNAME}\" ] && [ -z \"\${ACCESS_TOKEN}\" ]; then\n    echo -e \"using anon api call\"\nelse\n    GIT_ADDRESS=\"https://\${USERNAME}:\${ACCESS_TOKEN}@\$(echo -e \${GIT_ADDRESS} | cut -d/ -f3-)\"\nfi\n\nif [ \"\$(ls -A /mnt/server)\" ]; then\n    echo -e \"/mnt/server directory is not empty.\"\n    if [ -d .git ]; then\n        echo -e \".git directory exists\"\n        if [ -f .git/config ]; then\n            echo -e \"loading info from git config\"\n            ORIGIN=\$(git config --get remote.origin.url)\n        else\n            echo -e \"files found with no git config\"\n            exit 10\n        fi\n    fi\n\n    if [ \"\${ORIGIN}\" == \"\${GIT_ADDRESS}\" ]; then\n        echo \"pulling latest from github\"\n        git pull\n    fi\nelse\n    echo -e \"/mnt/server is empty.\"\n    if [ -z \${BRANCH} ]; then\n        git clone \${GIT_ADDRESS} .\n    else\n        git clone --single-branch --branch \${BRANCH} \${GIT_ADDRESS} .\n    fi\nfi\n\nif [[ ! -z \${NODE_PACKAGES} ]]; then\n    /usr/local/bin/npm install \${NODE_PACKAGES}\nfi\n\nif [ -f /mnt/server/package.json ]; then\n    /usr/local/bin/npm install --production\nfi\n\necho -e \"install complete\"\nexit 0",
+            "container": "node:18-buster-slim",
             "entrypoint": "bash"
         }
     },
     "variables": [
         {
-            "name": "Git Repo Address",
-            "description": "GitHub Repo to clone\r\n\r\nI.E. https:\/\/github.com\/user_name\/repo_name",
+            "name": "Git Repository",
+            "description": "GitHub repository URL to clone",
             "env_variable": "GIT_ADDRESS",
             "default_value": "",
             "user_viewable": true,
@@ -76,8 +106,8 @@ cat > /tmp/nodejs.json << 'EOF'
             "field_type": "text"
         },
         {
-            "name": "Install Branch",
-            "description": "The branch to install.",
+            "name": "Branch",
+            "description": "Git branch to use",
             "env_variable": "BRANCH",
             "default_value": "",
             "user_viewable": true,
@@ -86,33 +116,23 @@ cat > /tmp/nodejs.json << 'EOF'
             "field_type": "text"
         },
         {
-            "name": "Git Username",
-            "description": "Username to auth with git.",
-            "env_variable": "USERNAME",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Git Access Token",
-            "description": "Password to use with git.\r\n\r\nIt's best practice to use a Personal Access Token.\r\nhttps:\/\/github.com\/settings\/tokens\r\nhttps:\/\/gitlab.com\/-\/profile\/personal_access_tokens",
-            "env_variable": "ACCESS_TOKEN",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Command Run",
-            "description": "The command to start the bot",
+            "name": "Start Command",
+            "description": "Command to start the application",
             "env_variable": "CMD_RUN",
             "default_value": "npm start",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
+            "field_type": "text"
+        },
+        {
+            "name": "Node Packages",
+            "description": "Additional npm packages to install",
+            "env_variable": "NODE_PACKAGES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
             "field_type": "text"
         }
     ]
@@ -127,137 +147,91 @@ cat > /tmp/python.json << 'EOF'
         "update_url": null
     },
     "exported_at": "2025-12-02T07:04:42+07:00",
-    "name": "python",
+    "name": "Python",
     "author": "Ikanm",
-    "description": "A Generic Python Egg for Pterodactyl",
+    "description": "Python Application Egg",
     "features": null,
     "docker_images": {
-        "Python 3.13": "ghcr.io\/ptero-eggs\/yolks:python_3.13",
-        "Python 3.12": "ghcr.io\/ptero-eggs\/yolks:python_3.12",
-        "Python 3.11": "ghcr.io\/ptero-eggs\/yolks:python_3.11",
-        "Python 3.10": "ghcr.io\/ptero-eggs\/yolks:python_3.10",
-        "Python 3.9": "ghcr.io\/ptero-eggs\/yolks:python_3.9",
-        "Python 3.8": "ghcr.io\/ptero-eggs\/yolks:python_3.8",
-        "Python 3.7": "ghcr.io\/ptero-eggs\/yolks:python_3.7",
-        "Python 2.7": "ghcr.io\/ptero-eggs\/yolks:python_2.7"
+        "ghcr.io/ptero-eggs/yolks:python_3.12": "Python 3.12",
+        "ghcr.io/ptero-eggs/yolks:python_3.11": "Python 3.11",
+        "ghcr.io/ptero-eggs/yolks:python_3.10": "Python 3.10",
+        "ghcr.io/ptero-eggs/yolks:python_3.9": "Python 3.9",
+        "ghcr.io/ptero-eggs/yolks:python_3.8": "Python 3.8"
     },
     "file_denylist": [],
-    "startup": "if [[ -d .git ]] && [[ \"{{AUTO_UPDATE}}\" == \"1\" ]]; then git pull; fi; if [[ ! -z \"{{PY_PACKAGES}}\" ]]; then pip install -U --prefix .local {{PY_PACKAGES}}; fi; if [[ -f \/home\/container\/${REQUIREMENTS_FILE} ]]; then pip install -U --prefix .local -r ${REQUIREMENTS_FILE}; fi; \/usr\/local\/bin\/python \/home\/container\/{{PY_FILE}}",
+    "startup": "if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == \"1\" ]]; then git pull; fi; if [[ ! -z {{PY_PACKAGES}} ]]; then pip install {{PY_PACKAGES}}; fi; if [[ -f /home/container/\${REQUIREMENTS_FILE} ]]; then pip install -r \${REQUIREMENTS_FILE}; fi; python /home/container/{{PY_FILE}}",
     "config": {
         "files": "{}",
-        "startup": "{\r\n    \"done\": \"gudel023\"\r\n}",
+        "startup": {
+            "done": "ready"
+        },
         "logs": "{}",
         "stop": "^C"
     },
     "scripts": {
         "installation": {
-            "script": "#!\/bin\/bash\r\n# Python App Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt update\r\napt install -y git curl jq file unzip make gcc g++ libtool\r\n\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\nif [ \"${USER_UPLOAD}\" == \"true\" ] || [ \"${USER_UPLOAD}\" == \"1\" ]; then\r\n    echo -e \"assuming user knows what they are doing have a good day.\"\r\n    exit 0\r\nfi\r\n\r\n## add git ending if it's not on the address\r\nif [[ ${GIT_ADDRESS} != *.git ]]; then\r\n    GIT_ADDRESS=${GIT_ADDRESS}.git\r\nfi\r\n\r\nif [ -z \"${USERNAME}\" ] && [ -z \"${ACCESS_TOKEN}\" ]; then\r\n    echo -e \"using anon api call\"\r\nelse\r\n    GIT_ADDRESS=\"https:\/\/${USERNAME}:${ACCESS_TOKEN}@$(echo -e ${GIT_ADDRESS} | cut -d\/ -f3-)\"\r\nfi\r\n\r\n## pull git python repo\r\nif [ \"$(ls -A \/mnt\/server)\" ]; then\r\n    echo -e \"\/mnt\/server directory is not empty.\"\r\n    if [ -d .git ]; then\r\n        echo -e \".git directory exists\"\r\n        if [ -f .git\/config ]; then\r\n            echo -e \"loading info from git config\"\r\n            ORIGIN=$(git config --get remote.origin.url)\r\n        else\r\n            echo -e \"files found with no git config\"\r\n            echo -e \"closing out without touching things to not break anything\"\r\n            exit 10\r\n        fi\r\n    fi\r\n\r\n    if [ \"${ORIGIN}\" == \"${GIT_ADDRESS}\" ]; then\r\n        echo \"pulling latest from github\"\r\n        git pull\r\n    fi\r\nelse\r\n    echo -e \"\/mnt\/server is empty.\\ncloning files into repo\"\r\n    if [ -z ${BRANCH} ]; then\r\n        echo -e \"cloning default branch\"\r\n        git clone ${GIT_ADDRESS} .\r\n    else\r\n        echo -e \"cloning ${BRANCH}'\"\r\n        git clone --single-branch --branch ${BRANCH} ${GIT_ADDRESS} .\r\n    fi\r\n\r\nfi\r\n\r\nexport HOME=\/mnt\/server\r\n\r\necho \"Installing python requirements into folder\"\r\nif [[ ! -z ${PY_PACKAGES} ]]; then\r\n    pip install -U --prefix .local ${PY_PACKAGES}\r\nfi\r\n\r\nif [ -f \/mnt\/server\/requirements.txt ]; then\r\n    pip install -U --prefix .local -r ${REQUIREMENTS_FILE}\r\nfi\r\n\r\necho -e \"install complete\"\r\nexit 0",
-            "container": "python:3.8-slim-bookworm",
+            "script": "#!/bin/bash\n# Python App Installation Script\n#\n# Server Files: /mnt/server\napt update\napt install -y git curl python3 python3-pip python3-venv\n\nmkdir -p /mnt/server\ncd /mnt/server\n\nif [ \"\${USER_UPLOAD}\" == \"true\" ] || [ \"\${USER_UPLOAD}\" == \"1\" ]; then\n    echo -e \"User uploaded files detected.\"\n    exit 0\nfi\n\nif [[ \${GIT_ADDRESS} != *.git ]]; then\n    GIT_ADDRESS=\${GIT_ADDRESS}.git\nfi\n\nif [ -z \"\${USERNAME}\" ] && [ -z \"\${ACCESS_TOKEN}\" ]; then\n    echo -e \"Using anonymous git clone\"\nelse\n    GIT_ADDRESS=\"https://\${USERNAME}:\${ACCESS_TOKEN}@\$(echo -e \${GIT_ADDRESS} | cut -d/ -f3-)\"\nfi\n\nif [ \"\$(ls -A /mnt/server)\" ]; then\n    echo -e \"/mnt/server directory is not empty.\"\n    if [ -d .git ]; then\n        if [ -f .git/config ]; then\n            ORIGIN=\$(git config --get remote.origin.url)\n            if [ \"\${ORIGIN}\" == \"\${GIT_ADDRESS}\" ]; then\n                echo \"Pulling latest changes\"\n                git pull\n            fi\n        fi\n    fi\nelse\n    echo -e \"Cloning repository\"\n    if [ -z \${BRANCH} ]; then\n        git clone \${GIT_ADDRESS} .\n    else\n        git clone --single-branch --branch \${BRANCH} \${GIT_ADDRESS} .\n    fi\nfi\n\nif [[ ! -z \${PY_PACKAGES} ]]; then\n    pip3 install \${PY_PACKAGES}\nfi\n\nif [ -f /mnt/server/requirements.txt ]; then\n    pip3 install -r requirements.txt\nfi\n\necho -e \"Installation complete\"\nexit 0",
+            "container": "python:3.11-slim",
             "entrypoint": "bash"
         }
     },
     "variables": [
         {
-            "name": "Git Repo Address",
-            "description": "Git repo to clone\r\n\r\nI.E. https:\/\/github.com\/parkervcp\/repo_name",
-            "env_variable": "GIT_ADDRESS",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Git Branch",
-            "description": "What branch to pull from github.\r\n\r\nDefault is blank to pull the repo default branch",
-            "env_variable": "BRANCH",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "User Uploaded Files",
-            "description": "Skip all the install stuff if you are letting a user upload files.\r\n\r\n0 = false (default)\r\n1 = true",
-            "env_variable": "USER_UPLOAD",
-            "default_value": "0",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|boolean",
-            "field_type": "text"
-        },
-        {
-            "name": "Auto Update",
-            "description": "Pull the latest files on startup when using a GitHub repo.",
-            "env_variable": "AUTO_UPDATE",
-            "default_value": "0",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "required|boolean",
-            "field_type": "text"
-        },
-        {
-            "name": "App py file",
-            "description": "The file that starts the App.",
+            "name": "Python File",
+            "description": "Main Python file to run",
             "env_variable": "PY_FILE",
-            "default_value": "app.py",
+            "default_value": "main.py",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
             "field_type": "text"
         },
         {
-            "name": "Additional Python packages",
-            "description": "Install additional python packages.\r\n\r\nUse spaces to separate",
-            "env_variable": "PY_PACKAGES",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Git Username",
-            "description": "Username to auth with git.",
-            "env_variable": "USERNAME",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Git Access Token",
-            "description": "Password to use with git.\r\n\r\nIt's best practice to use a Personal Access Token.\r\nhttps:\/\/github.com\/settings\/tokens\r\nhttps:\/\/gitlab.com\/-\/profile\/personal_access_tokens",
-            "env_variable": "ACCESS_TOKEN",
-            "default_value": "",
-            "user_viewable": true,
-            "user_editable": true,
-            "rules": "nullable|string",
-            "field_type": "text"
-        },
-        {
-            "name": "Requirements file",
-            "description": "if there are other requirements files to choose from.",
+            "name": "Requirements File",
+            "description": "Python requirements file",
             "env_variable": "REQUIREMENTS_FILE",
             "default_value": "requirements.txt",
             "user_viewable": true,
             "user_editable": true,
             "rules": "required|string",
             "field_type": "text"
+        },
+        {
+            "name": "Git Repository",
+            "description": "Git repository URL",
+            "env_variable": "GIT_ADDRESS",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string",
+            "field_type": "text"
         }
     ]
 }
 EOF
 
-echo "🚀 Importing NodeJS Egg..."
-php artisan p:egg:import /tmp/nodejs.json
+# Import eggs
+echo "📥 Importing NodeJS egg..."
+php artisan p:egg:import /tmp/nodejs.json --force
 
-echo "🚀 Importing Python Egg..."
-php artisan p:egg:import /tmp/python.json
+echo "📥 Importing Python egg..."
+php artisan p:egg:import /tmp/python.json --force
 
+# Cleanup
 rm -f /tmp/nodejs.json /tmp/python.json
 
-echo "✅ Egg Import Completed!"
-echo "⚠️  Jangan lupa: buat NEST manual di panel lalu pindahkan egg ke nest tersebut."
+# Clear cache
+echo "🧹 Clearing cache..."
+php artisan cache:clear
+php artisan view:clear
+
+echo "✅ Setup Completed!"
+echo ""
+echo "📋 Summary:"
+echo "   • Nest: '$NEST_NAME' (ID: $NEST_ID)"
+echo "   • Eggs: NodeJS and Python"
+echo ""
+echo "⚠️  Note: If eggs don't appear in the panel, you may need to:"
+echo "   1. Check the nest ID in database: SELECT * FROM panel.nests;"
+echo "   2. Manually assign eggs to the nest via panel UI"
+echo "   3. Run: php artisan p:egg:list to see imported eggs"
